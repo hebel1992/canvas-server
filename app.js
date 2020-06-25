@@ -3,7 +3,7 @@ exports.serverInit = function () {
 
     const env = require('dotenv');
 
-    const checkoutRoutes = require('./checkout.routes');
+    const stripeRoutes = require('./stripe/stripe.routes');
     const envConf = env.config();
     if (envConf.error) {
         throw envConf.error;
@@ -18,7 +18,7 @@ exports.serverInit = function () {
         next();
     });
 
-    app.use(checkoutRoutes);
+    app.use(stripeRoutes);
 
     app.use((req, res) => {
         res.status(200).send('<h1>API is up and running!</h1>');

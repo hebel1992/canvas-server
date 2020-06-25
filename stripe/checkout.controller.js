@@ -1,20 +1,35 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-const {getDocData} = require('./data-base')
-const {createDBSessionAndGetId} = require('./data-base')
-const {Timestamp} = require('@google-cloud/firestore');
+const firestore = require('../data-base')
+const {Timestamp} = require('@google-cloud/firestore')
 
 exports.createCheckoutSession = async (req, res, next) => {
+    let error;
+
     try {
         const items = req.body.items;
         const callbackUrl = req.body.callbackUrl;
+        const userId = req.body.userId
+
+        const userExists = await firestore.checkIfUserExistsInDB(userId);
+        if (userId !== 'NoUser' && !userExists) {
+            error = new Error('User authentication failed');
+            error.statusCode = 403;
+            throw error;
+        }
+        if (!items || items.length < 1) {
+            error = new Error('Items not found');
+            error.statusCode = 403;
+            throw error;
+        }
 
         const dbSessionObject = {
             status: 'ongoing',
             created: Timestamp.now(),
-            items: items
+            items: items,
+            userId: userId
         }
 
-        const dbPurchaseSessionId = await createDBSessionAndGetId(dbSessionObject);
+        const dbPurchaseSessionId = await firestore.createDBSessionAndGetId(dbSessionObject);
         let sessionConfig = await setupPurchaseSession(callbackUrl, items, dbPurchaseSessionId);
         const session = await stripe.checkout.sessions.create(sessionConfig);
 
@@ -43,7 +58,7 @@ async function setupPurchaseSession(callbackUrl, items, sessionId) {
 async function processArray(items) {
     const imagesList = [];
     for (const elem of items) {
-        await getDocData(`images/${elem.id}`).then(image => {
+        await firestore.getDocData(`images/${elem.id}`).then(image => {
             imagesList.push({
                 name: 'Photo',
                 amount: image.price * 100,

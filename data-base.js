@@ -7,13 +7,26 @@ const db = new Firestore({
     keyFilename: serviceAccountPath
 })
 
-exports.getDocData = async (docPath) => {
+getDocData = async (docPath) => {
     const snap = await db.doc(docPath).get();
     return snap.data();
 }
 
-exports.createDBSessionAndGetId = async (sessionDbObject) => {
+createDBSessionAndGetId = async (sessionDbObject) => {
     const doc = await db.collection('purchaseSessions').doc();
     await doc.set(sessionDbObject);
     return doc.id;
 }
+
+checkIfUserExistsInDB = async (userId) => {
+    const userRef = await db.collection('users').doc(userId).get();
+    return userRef.exists
+}
+
+module.exports = {
+    db,
+    getDocData: getDocData,
+    createDBSessionAndGetId: createDBSessionAndGetId,
+    checkIfUserExistsInDB: checkIfUserExistsInDB
+}
+
