@@ -28,8 +28,11 @@ exports.createCheckoutSession = async (req, res, next) => {
             userId: userId
         }
 
+        const user = await firestore.getDocData(`users/${userId}`);
+
         const dbPurchaseSessionId = await firestore.createDBSessionAndGetId(dbSessionObject);
-        let sessionConfig = await setupPurchaseSession(callbackUrl, items, dbPurchaseSessionId);
+        let sessionConfig = await setupPurchaseSession(callbackUrl, items,
+            dbPurchaseSessionId, user ? user.stripeCustomerId : undefined);
         const session = await stripe.checkout.sessions.create(sessionConfig);
 
         await res.status(200).json({
@@ -38,11 +41,11 @@ exports.createCheckoutSession = async (req, res, next) => {
         })
 
     } catch (err) {
-        next(err);
+        next(err)
     }
 }
 
-async function setupPurchaseSession(callbackUrl, items, sessionId) {
+async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustomerId) {
     const lineItems = await processArray(items);
     const config = {
         success_url: callbackUrl + '?purchaseResult=success&ongoingSessionId=' + sessionId,
@@ -50,6 +53,9 @@ async function setupPurchaseSession(callbackUrl, items, sessionId) {
         payment_method_types: ['card'],
         client_reference_id: sessionId,
         line_items: lineItems
+    }
+    if (stripeCustomerId) {
+        config.customer = stripeCustomerId
     }
     return config;
 }

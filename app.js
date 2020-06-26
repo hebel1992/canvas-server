@@ -1,13 +1,6 @@
 exports.serverInit = function () {
     const express = require('express');
-
-    const env = require('dotenv');
-
     const stripeRoutes = require('./stripe/stripe.routes');
-    const envConf = env.config();
-    if (envConf.error) {
-        throw envConf.error;
-    }
 
     const app = express();
 

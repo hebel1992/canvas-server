@@ -25,10 +25,10 @@ exports.stripeWebHooks = async (req, res, next) => {
 async function onCheckoutSessionCompleted(session) {
     const purchaseSessionId = session.client_reference_id;
     const {userId, items} = await firestore.getDocData(`purchaseSessions/${purchaseSessionId}`);
-    await fullFillPurchase(userId, items, purchaseSessionId);
+    await fullFillPurchase(userId, items, purchaseSessionId, session.customer);
 }
 
-async function fullFillPurchase(userId, items, purchaseSessionId) {
+async function fullFillPurchase(userId, items, purchaseSessionId, stripeCustomerId) {
     const batch = firestore.db.batch();
 
     //user data update
@@ -37,6 +37,9 @@ async function fullFillPurchase(userId, items, purchaseSessionId) {
         batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now()});
         const user = await firestore.db.doc(`users/${userId}`);
         batch.update(user, {basket: []})
+
+        const userRef = firestore.db.doc(`users/${userId}`);
+        batch.set(userRef, {stripeCustomerId: stripeCustomerId}, {merge: true});
     }
 
     //session status update
@@ -47,23 +50,11 @@ async function fullFillPurchase(userId, items, purchaseSessionId) {
 }
 
 // exports.testMethod = async (req, res, next) => {
-//     const purchaseSessionId = req.body.sessionId;
-//     const {userId, items} = await firestore.getDocData(`purchaseSessions/${purchaseSessionId}`);
-//
-//     const batch = firestore.db.batch();
-//
-//     // //user data update
-//     const userShoppingHistory = await firestore.db.collection('users').doc(userId).collection('shoppingHistory').doc();
-//     batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now()});
-//     const user = await firestore.db.doc(`users/${userId}`);
-//     batch.update(user, {basket: []})
-//
-//     //session status update
-//     const purchaseSessionRef = await firestore.db.doc(`purchaseSessions/${purchaseSessionId}`);
-//     batch.update(purchaseSessionRef, {status: 'completed'})
-//
-//     batch.commit();
-//
-//     res.status(200).send();
+//     // const user = await firestore.db.doc('users/dUqzl5KX7EP31jXtzoAywEyEipi2').get();
+//     // console.log(user.data())
+//     // stripeUserId = user.data().stripeCustomerId;
+//     // console.log(stripeUserId)
+//     //
+//     // res.status(200).send();
 // }
 
