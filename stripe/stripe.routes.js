@@ -9,6 +9,6 @@ router.post('/api/stripe/checkout', bodyParser.json(), checkoutController.create
 
 router.post('/stripe-webhooks', bodyParser.raw({type: 'application/json'}), webHooks.stripeWebHooks)
 
-// router.post('/api/stripe/full-fill-test', bodyParser.json(), webHooks.fullFillTest)
+// router.post('/api/stripe/test-method', bodyParser.json(), webHooks.testMethod)
 
 module.exports = router;

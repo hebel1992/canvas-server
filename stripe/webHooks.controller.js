@@ -8,7 +8,7 @@ exports.stripeWebHooks = async (req, res, next) => {
         const event = stripe.webhooks.constructEvent(
             req.body, signature, process.env.STRIPE_WEBHOOKS_SECRET)
 
-        if (event.type == 'checkout.session.completed') {
+        if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
             await onCheckoutSessionCompleted(session)
         }
@@ -28,14 +28,16 @@ async function onCheckoutSessionCompleted(session) {
     await fullFillPurchase(userId, items, purchaseSessionId);
 }
 
-fullFillPurchase = async (userId, items, purchaseSessionId) => {
+async function fullFillPurchase(userId, items, purchaseSessionId) {
     const batch = firestore.db.batch();
 
-    // //user data update
-    const userShoppingHistory = await firestore.db.collection('users').doc(userId).collection('shoppingHistory').doc();
-    batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now()});
-    const user = await firestore.db.doc(`users/${userId}`);
-    batch.update(user, {basket: []})
+    //user data update
+    if (userId && userId !== 'NoUser') {
+        const userShoppingHistory = await firestore.db.collection('users').doc(userId).collection('shoppingHistory').doc();
+        batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now()});
+        const user = await firestore.db.doc(`users/${userId}`);
+        batch.update(user, {basket: []})
+    }
 
     //session status update
     const purchaseSessionRef = await firestore.db.doc(`purchaseSessions/${purchaseSessionId}`);
@@ -44,7 +46,7 @@ fullFillPurchase = async (userId, items, purchaseSessionId) => {
     return batch.commit();
 }
 
-// exports.fullFillTest = async (req, res, next) => {
+// exports.testMethod = async (req, res, next) => {
 //     const purchaseSessionId = req.body.sessionId;
 //     const {userId, items} = await firestore.getDocData(`purchaseSessions/${purchaseSessionId}`);
 //

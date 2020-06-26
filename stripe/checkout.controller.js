@@ -4,7 +4,6 @@ const {Timestamp} = require('@google-cloud/firestore')
 
 exports.createCheckoutSession = async (req, res, next) => {
     let error;
-
     try {
         const items = req.body.items;
         const callbackUrl = req.body.callbackUrl;
@@ -46,7 +45,7 @@ exports.createCheckoutSession = async (req, res, next) => {
 async function setupPurchaseSession(callbackUrl, items, sessionId) {
     const lineItems = await processArray(items);
     const config = {
-        success_url: callbackUrl + '?purchaseResult=success',
+        success_url: callbackUrl + '?purchaseResult=success&ongoingSessionId=' + sessionId,
         cancel_url: callbackUrl + '?purchaseResult=failed',
         payment_method_types: ['card'],
         client_reference_id: sessionId,
