@@ -8,7 +8,6 @@ exports.createCheckoutSession = async (req, res, next) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            console.log(errors);
             let error;
             error = new Error('Validation failed');
             error.statusCode = 422;
