@@ -33,7 +33,7 @@ async function fullFillPurchase(userId, items, purchaseSessionId, stripeCustomer
 
     //user data update
     if (userId && userId !== 'NoUser') {
-        const userShoppingHistory = await firestore.db.collection('users').doc(userId).collection('shoppingHistory').doc();
+        const userShoppingHistory = await firestore.db.collection('users').doc(userId).collection('shoppingHistory').doc(purchaseSessionId.toString());
         batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now()});
         const user = await firestore.db.doc(`users/${userId}`);
         batch.update(user, {basket: []})
@@ -50,11 +50,13 @@ async function fullFillPurchase(userId, items, purchaseSessionId, stripeCustomer
 }
 
 // exports.testMethod = async (req, res, next) => {
-//     // const user = await firestore.db.doc('users/dUqzl5KX7EP31jXtzoAywEyEipi2').get();
-//     // console.log(user.data())
-//     // stripeUserId = user.data().stripeCustomerId;
-//     // console.log(stripeUserId)
-//     //
-//     // res.status(200).send();
+//     try {
+//         res.status(200).json({
+//             message: 'All good'
+//         });
+//
+//     } catch (err) {
+//         next(err);
+//     }
 // }
 

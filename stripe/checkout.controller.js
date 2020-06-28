@@ -1,22 +1,34 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const firestore = require('../data-base')
 const {Timestamp} = require('@google-cloud/firestore')
+const {validationResult} = require('express-validator');
 
 exports.createCheckoutSession = async (req, res, next) => {
     let error;
     try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            console.log(errors);
+            let error;
+            error = new Error('Validation failed');
+            error.statusCode = 422;
+            throw error;
+        }
+
         const items = req.body.items;
         const callbackUrl = req.body.callbackUrl;
         const userId = req.body.userId
+        const userData = req.body.userData
 
         const userExists = await firestore.checkIfUserExistsInDB(userId);
-        if (userId !== 'NoUser' && !userExists) {
+        if (userId !== 'UserNotRegistered' && !userExists) {
             error = new Error('User authentication failed');
             error.statusCode = 403;
             throw error;
         }
         if (!items || items.length < 1) {
-            error = new Error('Items not found');
+            error = new Error;
+            error.message = 'Items not found!'
             error.statusCode = 403;
             throw error;
         }
@@ -25,7 +37,8 @@ exports.createCheckoutSession = async (req, res, next) => {
             status: 'ongoing',
             created: Timestamp.now(),
             items: items,
-            userId: userId
+            userId: userId,
+            userData: userData
         }
 
         const user = await firestore.getDocData(`users/${userId}`);
