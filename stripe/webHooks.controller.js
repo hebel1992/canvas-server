@@ -49,15 +49,3 @@ async function fullFillPurchase(userId, items, purchaseSessionId, stripeCustomer
     return batch.commit();
 }
 
-exports.testMethod = async (req, res, next) => {
-    console.log('test endpoint hit');
-    try {
-        res.status(200).json({
-            message: 'All good'
-        });
-
-    } catch (err) {
-        next(err);
-    }
-}
-
