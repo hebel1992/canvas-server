@@ -34,7 +34,7 @@ async function fullFillPurchase(userId, items, purchaseSessionId, stripeCustomer
     //user data update
     if (userId && userId !== 'NoUser') {
         const userShoppingHistory = await firestore.db.collection('users').doc(userId).collection('shoppingHistory').doc(purchaseSessionId.toString());
-        batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now()});
+        batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now(), paymentMethod: 'stripe'});
         const user = await firestore.db.doc(`users/${userId}`);
         batch.update(user, {basket: []})
 

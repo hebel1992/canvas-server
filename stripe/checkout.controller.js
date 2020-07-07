@@ -5,20 +5,19 @@ const {validationResult} = require('express-validator');
 
 exports.createCheckoutSession = async (req, res, next) => {
     let error;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        error = new Error('Validation failed');
+        error.statusCode = 422;
+        throw error;
+    }
+
+    const items = req.body.items;
+    const callbackUrl = req.body.callbackUrl;
+    const userId = req.body.userId;
+    const userData = req.body.userData;
+
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            let error;
-            error = new Error('Validation failed');
-            error.statusCode = 422;
-            throw error;
-        }
-
-        const items = req.body.items;
-        const callbackUrl = req.body.callbackUrl;
-        const userId = req.body.userId
-        const userData = req.body.userData
-
         const userExists = await firestore.checkIfUserExistsInDB(userId);
         if (userId !== 'UserNotRegistered' && !userExists) {
             error = new Error('User authentication failed');
@@ -37,7 +36,8 @@ exports.createCheckoutSession = async (req, res, next) => {
             created: Timestamp.now(),
             items: items,
             userId: userId,
-            userData: userData
+            userData: userData,
+            paymentMethod: 'stripe'
         }
 
         const user = await firestore.getDocData(`users/${userId}`);
