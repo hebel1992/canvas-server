@@ -18,6 +18,11 @@ createDBSessionAndGetId = async (sessionDbObject) => {
     return doc.id;
 }
 
+createDBSessionWithSpecifiedId = async (sessionDbObject, sessionId) => {
+    const doc = await db.collection('purchaseSessions').doc(sessionId);
+    await doc.set(sessionDbObject);
+}
+
 checkIfUserExistsInDB = async (userId) => {
     const userRef = await db.collection('users').doc(userId).get();
     return userRef.exists
@@ -27,6 +32,7 @@ module.exports = {
     db,
     getDocData: getDocData,
     createDBSessionAndGetId: createDBSessionAndGetId,
+    createDBSessionWithSpecifiedId: createDBSessionWithSpecifiedId,
     checkIfUserExistsInDB: checkIfUserExistsInDB
 }
 

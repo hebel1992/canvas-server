@@ -1,6 +1,6 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-const {Timestamp} = require('@google-cloud/firestore')
-const firestore = require('../data-base')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const {Timestamp} = require('@google-cloud/firestore');
+const firestore = require('../data-base');
 
 exports.stripeWebHooks = async (req, res, next) => {
     try {
@@ -32,7 +32,7 @@ async function fullFillPurchase(userId, items, purchaseSessionId, stripeCustomer
     const batch = firestore.db.batch();
 
     //user data update
-    if (userId && userId !== 'NoUser') {
+    if (userId && userId !== 'UserNotRegistered') {
         const userShoppingHistory = await firestore.db.collection('users').doc(userId).collection('shoppingHistory').doc(purchaseSessionId.toString());
         batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now(), paymentMethod: 'stripe'});
         const user = await firestore.db.doc(`users/${userId}`);

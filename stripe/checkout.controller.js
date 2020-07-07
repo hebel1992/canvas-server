@@ -42,6 +42,7 @@ exports.createCheckoutSession = async (req, res, next) => {
 
         const user = await firestore.getDocData(`users/${userId}`);
 
+
         const dbPurchaseSessionId = await firestore.createDBSessionAndGetId(dbSessionObject);
         let sessionConfig = await setupPurchaseSession(callbackUrl, items,
             dbPurchaseSessionId, user ? user.stripeCustomerId : undefined);
@@ -60,8 +61,8 @@ exports.createCheckoutSession = async (req, res, next) => {
 async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustomerId) {
     const lineItems = await processArray(items);
     const config = {
-        success_url: callbackUrl + '?purchaseResult=success&ongoingSessionId=' + sessionId,
-        cancel_url: callbackUrl + '?purchaseResult=failed',
+        success_url: callbackUrl + '/stripe-redirect?purchaseResult=success&ongoingSessionId=' + sessionId,
+        cancel_url: callbackUrl + '/stripe-redirect?purchaseResult=failed',
         payment_method_types: ['card'],
         client_reference_id: sessionId,
         line_items: lineItems
