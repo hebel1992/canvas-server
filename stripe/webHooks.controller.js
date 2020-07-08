@@ -1,6 +1,6 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-const {Timestamp} = require('@google-cloud/firestore')
-const firestore = require('../data-base')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const {Timestamp} = require('@google-cloud/firestore');
+const firestore = require('../data-base');
 
 exports.stripeWebHooks = async (req, res, next) => {
     try {
@@ -25,39 +25,7 @@ exports.stripeWebHooks = async (req, res, next) => {
 async function onCheckoutSessionCompleted(session) {
     const purchaseSessionId = session.client_reference_id;
     const {userId, items} = await firestore.getDocData(`purchaseSessions/${purchaseSessionId}`);
-    await fullFillPurchase(userId, items, purchaseSessionId, session.customer);
-}
-
-async function fullFillPurchase(userId, items, purchaseSessionId, stripeCustomerId) {
-    const batch = firestore.db.batch();
-
-    //user data update
-    if (userId && userId !== 'NoUser') {
-        const userShoppingHistory = await firestore.db.collection('users').doc(userId).collection('shoppingHistory').doc(purchaseSessionId.toString());
-        batch.set(userShoppingHistory, {items: items, timestamp: Timestamp.now()});
-        const user = await firestore.db.doc(`users/${userId}`);
-        batch.update(user, {basket: []})
-
-        const userRef = firestore.db.doc(`users/${userId}`);
-        batch.set(userRef, {stripeCustomerId: stripeCustomerId}, {merge: true});
-    }
-
-    //session status update
-    const purchaseSessionRef = await firestore.db.doc(`purchaseSessions/${purchaseSessionId}`);
-    batch.update(purchaseSessionRef, {status: 'completed'})
-
-    return batch.commit();
-}
-
-exports.testMethod = async (req, res, next) => {
-    console.log('test endpoint hit');
-    try {
-        res.status(200).json({
-            message: 'All good'
-        });
-
-    } catch (err) {
-        next(err);
-    }
+    // await fullFillPurchase(userId, items, purchaseSessionId, session.customer);
+    await firestore.fullFillPurchaseInDB(userId, items, purchaseSessionId, 'stripe', session.customer);
 }
 

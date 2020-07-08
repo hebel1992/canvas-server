@@ -4,11 +4,10 @@ const {body} = require('express-validator');
 const router = express.Router();
 const verify = require('../dataVerification')
 
+const createOrderController = require('./createOrder.controller')
+const captureOrderController = require('./caputreOrder.controller')
 
-const checkoutController = require('./checkout.controller');
-const webHooks = require('./webHooks.controller');
-
-router.post('/api/stripe/checkout', bodyParser.json(), [
+router.post('/api/paypal/create-order', bodyParser.json(), [
     body('userData.userTitle').custom((value, {req}) => {
         if (value !== 'mr' && value !== 'mrs') {
             throw new Error()
@@ -21,8 +20,9 @@ router.post('/api/stripe/checkout', bodyParser.json(), [
     body('userData.addressLine1').trim().isLength({min: 5}),
     body('userData.city').trim().isLength({min: 2}),
     body('userData.postCode').trim().isLength({min: 5, max: 7})
-], verify.dataVerification, checkoutController.createCheckoutSession);
+], verify.dataVerification, createOrderController.createOrder);
+router.post('/api/paypal/capture-order', bodyParser.json(), captureOrderController.captureOrder);
 
-router.post('/stripe-webhooks', bodyParser.raw({type: 'application/json'}), webHooks.stripeWebHooks)
+// router.post('/api/paypal/test-method', bodyParser.json(), captureOrderController.testMethod);
 
 module.exports = router;

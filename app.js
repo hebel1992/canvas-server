@@ -1,6 +1,7 @@
 exports.serverInit = function () {
     const express = require('express');
     const stripeRoutes = require('./stripe/stripe.routes');
+    const payPalRoutes = require('./paypal/paypal.routes');
 
     const app = express();
 
@@ -12,6 +13,7 @@ exports.serverInit = function () {
     });
 
     app.use(stripeRoutes);
+    app.use(payPalRoutes);
 
     app.use((req, res) => {
         res.status(200).send('<h1>API is up and running!</h1>');
