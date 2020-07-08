@@ -1,11 +1,8 @@
 const paypal = require('@paypal/checkout-server-sdk');
 const firestore = require('../data-base')
 const {Timestamp} = require('@google-cloud/firestore')
-const {validationResult} = require('express-validator');
 
 exports.createOrder = async (req, res, next) => {
-    const errors = validationResult(req);
-    let error;
     const items = req.body.items;
     const callbackUrl = req.body.callbackUrl;
     const userId = req.body.userId;
@@ -28,24 +25,6 @@ exports.createOrder = async (req, res, next) => {
     const request = new paypal.orders.OrdersCreateRequest();
 
     try {
-        if (!errors.isEmpty()) {
-            error = new Error('Validation failed');
-            error.statusCode = 422;
-            throw error;
-        }
-        const userExists = await firestore.checkIfUserExistsInDB(userId);
-        if (userId !== 'UserNotRegistered' && !userExists) {
-            error = new Error('User authentication failed');
-            error.statusCode = 403;
-            throw error;
-        }
-        if (!items || items.length < 1) {
-            error = new Error;
-            error.message = 'Items not found!'
-            error.statusCode = 403;
-            throw error;
-        }
-
         const processedRequest = await setupRequestBody(request, callbackUrl, items);
 
         // Call API with your client and get a response for your call
@@ -121,6 +100,7 @@ async function processArray(items) {
                     value: +image.price
                 },
                 quantity: elem.quantity,
+                category: 'PHYSICAL_GOODS'
             });
         });
     }
