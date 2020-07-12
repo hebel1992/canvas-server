@@ -17,7 +17,6 @@ router.post('/api/stripe/checkout', bodyParser.json(), [
     }),
     body(['userData.firstName', 'userData.lastName']).trim().isLength({min: 2}),
     body('userData.email', 'userData.lastName').trim().isEmail(),
-    body('userData.phone', 'userData.lastName').trim().isLength({min: 9, max: 15}),
     body('userData.addressLine1').trim().isLength({min: 5}),
     body('userData.city').trim().isLength({min: 2}),
     body('userData.postCode').trim().isLength({min: 5, max: 7})

@@ -1,5 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-const firestore = require('../data-base')
+const {createDBSessionAndGetId, getDocData} = require('../data-base')
 const {Timestamp} = require('@google-cloud/firestore')
 
 exports.createCheckoutSession = async (req, res, next) => {
@@ -7,6 +7,7 @@ exports.createCheckoutSession = async (req, res, next) => {
     const callbackUrl = req.body.callbackUrl;
     const userId = req.body.userId;
     const userData = req.body.userData;
+    const purchaseType = req.body.purchaseType;
 
     try {
         const dbSessionObject = {
@@ -15,14 +16,15 @@ exports.createCheckoutSession = async (req, res, next) => {
             items: items,
             userId: userId,
             userData: userData,
-            paymentMethod: 'stripe'
+            paymentMethod: 'stripe',
+            purchaseType: purchaseType
         }
 
-        const user = await firestore.getDocData(`users/${userId}`);
+        const user = await getDocData(`users/${userId}`);
 
-        const dbPurchaseSessionId = await firestore.createDBSessionAndGetId(dbSessionObject);
+        const dbPurchaseSessionId = await createDBSessionAndGetId(dbSessionObject);
         let sessionConfig = await setupPurchaseSession(callbackUrl, items,
-            dbPurchaseSessionId, user ? user.stripeCustomerId : undefined);
+            dbPurchaseSessionId, user ? user.stripeCustomerId : undefined, purchaseType);
         const session = await stripe.checkout.sessions.create(sessionConfig);
 
         await res.status(200).json({
@@ -35,11 +37,11 @@ exports.createCheckoutSession = async (req, res, next) => {
     }
 }
 
-async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustomerId) {
+async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustomerId, purchaseType) {
     const lineItems = await processArray(items);
     const config = {
-        success_url: callbackUrl + '/stripe-redirect?purchaseResult=success&ongoingSessionId=' + sessionId,
-        cancel_url: callbackUrl + '/stripe-redirect?purchaseResult=failed',
+        success_url: `${callbackUrl}/payment-redirect?purchaseResult=success&ongoingSessionId=${sessionId}&purchaseType=${purchaseType}`,
+        cancel_url: `${callbackUrl}/payment-redirect?purchaseResult=failed`,
         payment_method_types: ['card'],
         client_reference_id: sessionId,
         line_items: lineItems
@@ -53,7 +55,7 @@ async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustome
 async function processArray(items) {
     const imagesList = [];
     for (const elem of items) {
-        await firestore.getDocData(`images/${elem.id}`).then(image => {
+        await getDocData(`images/${elem.id}`).then(image => {
             imagesList.push({
                 name: 'Photo',
                 amount: image.price * 100,
