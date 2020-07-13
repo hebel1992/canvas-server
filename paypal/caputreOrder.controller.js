@@ -14,7 +14,9 @@ exports.captureOrder = async (req, res, next) => {
     request.requestBody({});
 
     try {
-        await client.execute(request);
+        await client.execute(request).catch(err => {
+            throw JSON.parse(err.message)
+        });
 
         const {userId, items} = await getDocData(`purchaseSessions/${orderId}`);
         await fullFillPurchaseInDB(userId, items, orderId, 'paypal', undefined);
@@ -26,13 +28,3 @@ exports.captureOrder = async (req, res, next) => {
         next(err);
     }
 }
-
-// exports.testMethod = async (req, res, next) => {
-//     try {
-//         await res.status(200).json({
-//             message: 'All good!'
-//         });
-//     } catch (err) {
-//         next(err);
-//     }
-// }

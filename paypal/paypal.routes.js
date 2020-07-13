@@ -22,6 +22,4 @@ router.post('/api/paypal/create-order', bodyParser.json(), [
 ], verify.dataVerification, createOrderController.createOrder);
 router.post('/api/paypal/capture-order', bodyParser.json(), captureOrderController.captureOrder);
 
-// router.post('/api/paypal/test-method', bodyParser.json(), captureOrderController.testMethod);
-
 module.exports = router;

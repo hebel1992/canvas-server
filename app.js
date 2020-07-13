@@ -15,13 +15,13 @@ exports.serverInit = function () {
     app.use(stripeRoutes);
     app.use(payPalRoutes);
 
-    app.use((req, res) => {
+    app.use('/', (req, res) => {
         res.status(200).send('<h1>API is up and running!</h1>');
     });
 
     app.use((error, req, res, next) => {
         const status = error.statusCode || 500;
-        const message = error.message || 'Endpoint not found';
+        const message = error.message || 'Internal Server Error.';
         const data = error.data;
         res.status(status).json({
             message: message,

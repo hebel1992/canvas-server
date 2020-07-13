@@ -65,5 +65,6 @@ async function processArray(items) {
             });
         });
     }
+    imagesList.push({name: 'Shipping', amount: 800, currency: 'gbp', quantity: 1})
     return imagesList;
 }

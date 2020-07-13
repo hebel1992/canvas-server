@@ -30,7 +30,9 @@ exports.createOrder = async (req, res, next) => {
         const processedRequest = await setupRequestBody(request, callbackUrl, items, purchaseType);
 
         // Call API with your client and get a response for your call
-        const response = await executeOrder(client, processedRequest);
+        const response = await executeOrder(client, processedRequest).catch(err => {
+           throw JSON.parse(err.message)
+        });
         await createDBSessionWithSpecifiedId(dbSessionObject, response.id);
 
         let approveLink;
