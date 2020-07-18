@@ -24,6 +24,6 @@ exports.stripeWebHooks = async (req, res, next) => {
 async function onCheckoutSessionCompleted(session) {
     const purchaseSessionId = session.client_reference_id;
     const {userId, items} = await getDocData(`purchaseSessions/${purchaseSessionId}`);
-    await fullFillPurchaseInDB(userId, items, purchaseSessionId, 'stripe', session.customer);
+    await fullFillPurchaseInDB(userId, items, purchaseSessionId, 'card', session.customer);
 }
 

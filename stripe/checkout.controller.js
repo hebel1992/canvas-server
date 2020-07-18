@@ -3,11 +3,9 @@ const {createDBSessionAndGetId, getDocData} = require('../data-base')
 const {Timestamp} = require('@google-cloud/firestore')
 
 exports.createCheckoutSession = async (req, res, next) => {
-    const items = req.body.items;
-    const callbackUrl = req.body.callbackUrl;
-    const userId = req.body.userId;
-    const userData = req.body.userData;
-    const purchaseType = req.body.purchaseType;
+
+    const requestBody = req.body;
+    const {items, callbackUrl, userId, userData, purchaseType} = requestBody;
 
     try {
         const dbSessionObject = {
@@ -16,21 +14,23 @@ exports.createCheckoutSession = async (req, res, next) => {
             items: items,
             userId: userId,
             userData: userData,
-            paymentMethod: 'stripe',
+            paymentMethod: 'card',
             purchaseType: purchaseType
         }
 
-        const user = await getDocData(`users/${userId}`);
+        const response = await Promise.all([
+            getDocData(`users/${userId}`),
+            createDBSessionAndGetId(dbSessionObject)]);
 
-        const dbPurchaseSessionId = await createDBSessionAndGetId(dbSessionObject);
-        let sessionConfig = await setupPurchaseSession(callbackUrl, items,
-            dbPurchaseSessionId, user ? user.stripeCustomerId : undefined, purchaseType);
+        const sessionConfig = await setupPurchaseSession(callbackUrl, items,
+            response[1], response[0] ? response[0].stripeCustomerId : undefined, purchaseType);
+
         const session = await stripe.checkout.sessions.create(sessionConfig);
 
         await res.status(200).json({
             stripeCheckoutSessionId: session.id,
             stripePublicKey: process.env.STRIPE_PUBLISHABLE_KEY
-        })
+        });
 
     } catch (err) {
         next(err)
@@ -55,14 +55,14 @@ async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustome
 async function processArray(items) {
     const imagesList = [];
     for (const elem of items) {
-        await getDocData(`images/${elem.id}`).then(image => {
-            imagesList.push({
-                name: 'Photo',
-                amount: image.price * 100,
-                currency: 'gbp',
-                quantity: elem.quantity,
-                images: [image.url]
-            });
+        const imageId = elem.id.trim();
+        const image = await getDocData(`images/${imageId}`);
+        imagesList.push({
+            name: 'Photo',
+            amount: image.price * 100,
+            currency: 'gbp',
+            quantity: elem.quantity,
+            images: [image.url]
         });
     }
     imagesList.push({name: 'Shipping', amount: 800, currency: 'gbp', quantity: 1})

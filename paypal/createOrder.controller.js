@@ -1,13 +1,11 @@
 const paypal = require('@paypal/checkout-server-sdk');
-const {createDBSessionWithSpecifiedId, getDocData} = require('../data-base')
-const {Timestamp} = require('@google-cloud/firestore')
+const {createDBSessionWithSpecifiedId, getDocData} = require('../data-base');
+const {Timestamp} = require('@google-cloud/firestore');
 
 exports.createOrder = async (req, res, next) => {
-    const items = req.body.items;
-    const callbackUrl = req.body.callbackUrl;
-    const userId = req.body.userId;
-    const userData = req.body.userData;
-    const purchaseType = req.body.purchaseType;
+
+    const requestBody = req.body;
+    const {items, callbackUrl, userId, userData, purchaseType} = requestBody;
 
     const dbSessionObject = {
         status: 'ongoing',
@@ -95,7 +93,8 @@ async function setupRequestBody(request, callbackUrl, items, purchaseType) {
 async function processArray(items) {
     const imagesList = [];
     for (const elem of items) {
-        await getDocData(`images/${elem.id}`).then(image => {
+        const imageId = elem.id.trim();
+        await getDocData(`images/${imageId}`).then(image => {
             imagesList.push({
                 name: 'Photo',
                 unit_amount: {
