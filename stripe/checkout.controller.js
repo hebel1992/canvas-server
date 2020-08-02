@@ -1,5 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-const {createDBSessionAndGetId, getDocData} = require('../data-base')
+const {createDBSessionAndGetId, getDocData, updateUserData} = require('../data-base')
 const {Timestamp} = require('@google-cloud/firestore')
 
 exports.createCheckoutSession = async (req, res, next) => {
@@ -23,9 +23,15 @@ exports.createCheckoutSession = async (req, res, next) => {
             createDBSessionAndGetId(dbSessionObject)]);
 
         const sessionConfig = await setupPurchaseSession(callbackUrl, items,
-            response[1], response[0] ? response[0].stripeCustomerId : undefined, purchaseType);
+            response[1], response[0] ? response[0].stripeCustomerId : undefined, purchaseType, userData);
 
         const session = await stripe.checkout.sessions.create(sessionConfig);
+
+        if (userId !== 'UserNotRegistered') {
+            updateUserData(userId, userData).catch(err => {
+                console.log('user data update failed');
+            });
+        }
 
         await res.status(200).json({
             stripeCheckoutSessionId: session.id,
@@ -37,7 +43,7 @@ exports.createCheckoutSession = async (req, res, next) => {
     }
 }
 
-async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustomerId, purchaseType) {
+async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustomerId, purchaseType, userData) {
     const lineItems = await processArray(items);
     const config = {
         success_url: `${callbackUrl}/payment-redirect?purchaseResult=success&ongoingSessionId=${sessionId}&purchaseType=${purchaseType}`,
@@ -48,6 +54,8 @@ async function setupPurchaseSession(callbackUrl, items, sessionId, stripeCustome
     }
     if (stripeCustomerId) {
         config.customer = stripeCustomerId
+    } else {
+        config.customer_email = userData.email
     }
     return config;
 }

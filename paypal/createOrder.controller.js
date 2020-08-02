@@ -1,5 +1,5 @@
 const paypal = require('@paypal/checkout-server-sdk');
-const {createDBSessionWithSpecifiedId, getDocData} = require('../data-base');
+const {createDBSessionWithSpecifiedId, getDocData, updateUserData} = require('../data-base');
 const {Timestamp} = require('@google-cloud/firestore');
 
 exports.createOrder = async (req, res, next) => {
@@ -29,16 +29,22 @@ exports.createOrder = async (req, res, next) => {
 
         // Call API with your client and get a response for your call
         const response = await executeOrder(client, processedRequest).catch(err => {
-           throw JSON.parse(err.message)
+            throw JSON.parse(err.message)
         });
         await createDBSessionWithSpecifiedId(dbSessionObject, response.id);
-
         let approveLink;
         for (let i = 0; i < response.links.length; i++) {
             if (response.links[i].rel === 'approve') {
                 approveLink = response.links[i].href;
             }
         }
+
+        if (userId !== 'UserNotRegistered') {
+            updateUserData(userId, userData).catch(err => {
+                console.log('user data update failed');
+            });
+        }
+
         await res.status(200).json({
             redirect_url: approveLink
         });

@@ -28,8 +28,17 @@ exports.checkIfUserExistsInDB = async (userId) => {
     return userRef.exists
 }
 
+exports.updateUserData = async (userId, userData) => {
+    await db.collection('users').doc(userId).update(userData);
+}
+
 exports.fullFillPurchaseInDB = async (userId, items, purchaseSessionId, paymentMethod, stripeCustomerId) => {
     const batch = db.batch();
+
+    //session status update
+    const purchaseSessionRef = await db.doc(`purchaseSessions/${purchaseSessionId}`);
+    batch.update(purchaseSessionRef, {status: 'completed'})
+
     //user data update
     if (userId && userId !== 'UserNotRegistered') {
         const {purchaseType} = await getData(`purchaseSessions/${purchaseSessionId}`);
@@ -45,10 +54,5 @@ exports.fullFillPurchaseInDB = async (userId, items, purchaseSessionId, paymentM
             batch.set(userRef, {stripeCustomerId: stripeCustomerId}, {merge: true});
         }
     }
-
-    //session status update
-    const purchaseSessionRef = await db.doc(`purchaseSessions/${purchaseSessionId}`);
-    batch.update(purchaseSessionRef, {status: 'completed'})
-
     return batch.commit();
 }
